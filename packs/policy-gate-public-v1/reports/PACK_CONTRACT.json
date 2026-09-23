@@ -1,0 +1,28 @@
+{
+  "baseline": "EVAL_BASELINE.md",
+  "claim_boundary": "Labels are computed deterministically from provenanced public policy atoms and structured action features under policy-shall-gate-v1. Not legal compliance certification or general intelligence measurement.",
+  "pack_kind": "policy_gate_public_v1",
+  "public_safe": true,
+  "release_bar": {
+    "hard_family": "policy+action composition",
+    "provenance_jsonl": true,
+    "recompute_on_load": true
+  },
+  "sanitization": {
+    "no_operator_pii": true,
+    "no_private_chat_export": true,
+    "public_policy_summaries": true,
+    "us_government_work_sources": true
+  },
+  "splits": {
+    "challenge": 12,
+    "eval": 16,
+    "preview": 8,
+    "train": 24
+  },
+  "target": "T2",
+  "tasks": [
+    "policy-shall-gate-v1"
+  ],
+  "title": "Policy Shall Gate Public v1"
+}

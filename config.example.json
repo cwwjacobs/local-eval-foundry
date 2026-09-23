@@ -1,0 +1,11 @@
+{
+  "archive": "C:\\path\\to\\nvd-10kModern-EVALsFrozenV1canon.zip",
+  "expected_archive_sha256": "1dad63c829b358e45ebb2f9e76a76791142fdf7c96470d9f3a193ff4f0ea3b4e",
+  "model_endpoint": "http://127.0.0.1:1234",
+  "model": "local-model",
+  "model_transport": "openai_compatible",
+  "max_tokens": 220,
+  "temperature": 0.0,
+  "timeout_seconds": 45,
+  "state_dir": "state"
+}

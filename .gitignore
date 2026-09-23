@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.coverage
+build/
+dist/
+*.egg-info/
+state/
+receipts/
+benchmark-reports/
+*.sqlite3
+*.sqlite3-*
+*.zip
+.env
+
+# Local/private material never belongs in the public repository.
+/private/
+/internal/
+/local-only/
+/.secrets/

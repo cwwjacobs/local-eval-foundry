@@ -1,0 +1,93 @@
+name: EvalFoundry Core CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install package
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+      - name: Compile package
+        run: python -m compileall -q evalfoundry
+      - name: Build canonical release packs first pass
+        run: python scripts/build_release_packs.py > build-release-packs-first.json
+      - name: Save first-pass release pins
+        shell: bash
+        run: |
+          cp packs/policy-gate-public-v1.SHA256 /tmp/policy-first.SHA256
+          cp packs/tool-contract-public-v1.SHA256 /tmp/tool-first.SHA256
+      - name: Build canonical release packs second pass
+        run: python scripts/build_release_packs.py > build-release-packs-second.json
+      - name: Compare Policy Gate pin
+        run: diff -u /tmp/policy-first.SHA256 packs/policy-gate-public-v1.SHA256
+      - name: Compare Tool Contract pin
+        run: diff -u /tmp/tool-first.SHA256 packs/tool-contract-public-v1.SHA256
+      - name: Print canonical release pins
+        run: |
+          printf 'policy_gate=' && cat packs/policy-gate-public-v1.SHA256
+          printf 'tool_contract=' && cat packs/tool-contract-public-v1.SHA256
+      - name: Build Agent Ops demonstration pack
+        run: python scripts/build_agent_ops_public_v1.py > build-agent-ops-demo.json
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Verify packaged CLI
+        run: |
+          evalfoundry --help
+          evalfoundry-benchmark --help
+      - name: Verify release packs against generated pins
+        shell: bash
+        run: |
+          evalfoundry verify \
+            --archive packs/policy-gate-public-v1.zip \
+            --pack policy_gate \
+            --expected-sha256 "$(cat packs/policy-gate-public-v1.SHA256)"
+          evalfoundry verify \
+            --archive packs/tool-contract-public-v1.zip \
+            --pack tool_contract \
+            --expected-sha256 "$(cat packs/tool-contract-public-v1.SHA256)"
+
+  release-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reject repository contamination
+        shell: bash
+        run: |
+          forbidden=(
+            private
+            internal
+            local-only
+            .secrets
+          )
+          for path in "${forbidden[@]}"; do
+            if [[ -e "$path" ]]; then
+              echo "Forbidden release path present: $path" >&2
+              exit 1
+            fi
+          done
+      - name: Reject obvious private artifacts
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)(private|secret|credentials|api[_-]?key)(/|\.|$)' ; then
+            echo "Potentially private artifact is tracked." >&2
+            exit 1
+          fi

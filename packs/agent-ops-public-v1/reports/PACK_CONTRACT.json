@@ -1,0 +1,24 @@
+{
+  "claim_boundary": "Labels are computed deterministically from synthetic public-safe evidence using published agent-ops rubrics. Not a measure of private corpus quality or real-world security certification.",
+  "pack_kind": "agent_ops_public_v1",
+  "public_safe": true,
+  "sanitization": {
+    "no_anatomy_codewords": true,
+    "no_operator_pii": true,
+    "no_persona_intimacy": true,
+    "source": "hand-authored public-safe scenarios (not raw chat export)",
+    "synthetic_only": true
+  },
+  "splits": {
+    "challenge": 30,
+    "eval": 40,
+    "preview": 20,
+    "train": 80
+  },
+  "tasks": [
+    "agent-domain-multi-hit-v1",
+    "action-gate-v1",
+    "skill-pack-checklist-v1"
+  ],
+  "title": "Agent Ops Public Eval v1"
+}

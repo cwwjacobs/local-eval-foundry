@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evalfoundry"
+version = "0.2.0"
+description = "Local runner and verifier for sealed, deterministic, provenance-bound AI evaluation packs."
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "GTDataworks contributors"}]
+keywords = ["ai", "evaluation", "benchmarks", "llm", "provenance", "reproducibility"]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+evalfoundry = "evalfoundry.cli:main"
+evalfoundry-benchmark = "evalfoundry.benchmark_cli:main"
+
+[tool.setuptools]
+packages = ["evalfoundry"]
+
+[tool.unittest]
+start-directory = "tests"
+
+[project.urls]
+Homepage = "https://gtdataworks.com"
+Repository = "https://github.com/cwwjacobs/local-eval-foundry"

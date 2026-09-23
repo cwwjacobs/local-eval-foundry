@@ -1,0 +1,27 @@
+{
+  "baseline": "EVAL_BASELINE.md",
+  "claim_boundary": "Labels are computed deterministically from provenanced tool schemas, proposed calls, and granted scopes under tool-contract-v1. Not general intelligence measurement or remote API certification.",
+  "pack_kind": "tool_contract_public_v1",
+  "public_safe": true,
+  "release_bar": {
+    "hard_family": "schema+call+scope composition",
+    "provenance_jsonl": true,
+    "recompute_on_load": true
+  },
+  "sanitization": {
+    "no_operator_pii": true,
+    "no_private_chat_export": true,
+    "public_api_docs_and_standards": true
+  },
+  "splits": {
+    "challenge": 12,
+    "eval": 16,
+    "preview": 8,
+    "train": 24
+  },
+  "target": "T3",
+  "tasks": [
+    "tool-contract-v1"
+  ],
+  "title": "Tool Contract Public v1"
+}
