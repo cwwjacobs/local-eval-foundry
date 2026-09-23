@@ -73,7 +73,7 @@ SHA-256 sidecars are updated only after canonicalization.
 
 CI performs this release build twice and rejects any hash drift. Agent Ops is
 built once separately so its demonstration tests still run without expanding
-the v0.2 release claim.
+the 1.0 release claim.
 
 ## Verify a release pack
 

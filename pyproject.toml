@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evalfoundry"
-version = "0.2.0"
+version = "1.0.0"
 description = "Local runner and verifier for sealed, deterministic, provenance-bound AI evaluation packs."
 readme = "README.md"
 license = {file = "LICENSE"}

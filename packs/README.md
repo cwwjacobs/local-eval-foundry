@@ -101,7 +101,7 @@ Attestation: `agent-ops-public-v1/reports/PUBLIC_SAFE.md`
 
 ---
 
-## Frozen digests (v0.2.0 canonical release packs)
+## Frozen digests (1.0.0 release packs)
 
 | Pack | SHA-256 |
 |------|---------|

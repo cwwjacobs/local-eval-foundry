@@ -1,4 +1,4 @@
-"""Build and canonicalize the EvalFoundry v0.2 release packs."""
+"""Build and canonicalize the EvalFoundry release packs."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def _write_pin(path: Path, digest: str) -> None:
 
 
 def build_release_packs() -> dict[str, object]:
-    """Build only the release-grade v0.2 reference packs.
+    """Build only the release-grade reference packs.
 
     Agent Ops remains a synthetic plumbing demonstration and is intentionally
     outside the release reproducibility claim.

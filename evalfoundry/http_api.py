@@ -32,7 +32,7 @@ class ApiContext:
 
 def make_handler(context: ApiContext) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
-        server_version = "EvalFoundry/0.1"
+        server_version = "EvalFoundry/1.0.0"
 
         @staticmethod
         def _health_payload() -> dict[str, Any]:
