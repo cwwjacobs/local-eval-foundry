@@ -20,15 +20,10 @@ param(
     [string]$AllowOrigin
 )
 
-$bundledPython = 'C:\Users\ultra\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
-if (Test-Path -LiteralPath $bundledPython) {
-    $python = $bundledPython
-} else {
-    $python = (Get-Command python -ErrorAction Stop).Source
-    $version = (& $python --version 2>&1 | Out-String).Trim()
-    if ($version -notmatch '^Python 3\.(1[1-9]|[2-9][0-9])\.') {
-        throw "EvalFoundry requires Python 3.11 or newer; found '$version'."
-    }
+$python = (Get-Command python -ErrorAction Stop).Source
+$version = (& $python --version 2>&1 | Out-String).Trim()
+if ($version -notmatch '^Python 3\.(1[1-9]|[2-9][0-9])\.') {
+    throw "EvalFoundry requires Python 3.11 or newer; found '$version'."
 }
 
 $arguments = @(

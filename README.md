@@ -28,6 +28,13 @@ evaluation result that answers:
 - **No hidden retries:** a single-case run performs exactly one explicit model call.
 - **Explicit benchmark budget:** subset and full-split runs require a call budget equal to the selected case count.
 
+"Blind" and "sealed" describe what the model sees and the order in which the
+engine reads files at run time. They do not mean the answers are secret: the
+public packs in this repository include their answer files, so anyone
+(including a model trained on public code) can read them. Treat the public
+packs as reproducibility and integration references, not as
+contamination-resistant benchmarks.
+
 ## Included public packs
 
 | Pack | Task | Labels | Status |
@@ -37,15 +44,22 @@ evaluation result that answers:
 | Agent Ops Public v1 | Synthetic agent-operations plumbing cases | task-specific | Demonstration pack, outside release reproducibility claim |
 
 The legacy NVD source-priority pack remains supported as a reference vertical,
-but it is not the product identity.
+but it is not the product identity and it is not distributed in this
+repository. Examples in `docs/` that mention `nvd-*` case IDs or
+`train_8000` files refer to that pack.
 
 ## Install
+
+Requires Python 3.11 or newer.
 
 ```bash
 python -m pip install -e .
 ```
 
 EvalFoundry has no runtime Python dependencies.
+
+Pack ZIPs are build outputs and are not committed. Build them (next section)
+before running `verify`, `select`, `run`, or the pack-dependent tests.
 
 ## Build canonical release packs
 

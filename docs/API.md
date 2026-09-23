@@ -73,7 +73,9 @@ model run.
 2. Do not calculate, decorate, or invent a score client-side.
 3. Render an engine receipt verbatim enough to distinguish `SCORED`, `HOLD`,
    and `FAILED`.
-4. Never send model credentials through the UI. EvalFoundry's initial local
-   OpenAI-compatible adapter uses no credentials.
+4. Never send model credentials through the UI. The engine reads an optional
+   `LM_API_TOKEN` environment variable and, when it is set, sends it to the
+   configured model endpoint as `Authorization: Bearer <token>`. When it is
+   unset, no credential is sent.
 5. If UI and engine are not same-origin, start the engine with the exact
    `--allow-origin` value rather than opening CORS broadly by default.

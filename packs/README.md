@@ -101,12 +101,15 @@ Attestation: `agent-ops-public-v1/reports/PUBLIC_SAFE.md`
 
 ---
 
-## Frozen digests (2026-07-10 rehash close)
+## Frozen digests (v0.2.0 canonical release packs)
 
 | Pack | SHA-256 |
 |------|---------|
 | agent-ops-public-v1 | `f3ca97b715f93c2134121911f12b76ee3298af26cb1d65c1673377aada117941` |
-| policy-gate-public-v1 | `0ba8ffd4fb13194dfcd7dfb762b25d3442d73d871791325bd12376a06972b86f` |
-| tool-contract-public-v1 | `b9b36224b05c35ccb375708b53ead922310bb4c3d9e4fb52a4d1a725511b433c` |
+| policy-gate-public-v1 | `c5efe1c896b89edded410c42f63707544e5a0a4a0d0739f6760d549c4f24f1ec` |
+| tool-contract-public-v1 | `09a67fca45ad04ddaaa06f101be24607371a66da531480972a4246cb6ed2a8c0` |
 
-Pinned in `evalfoundry/vault.py` as `APPROVED_*_PUBLIC_V1_SHA256`.
+Pinned in `evalfoundry/vault.py` as `APPROVED_*_PUBLIC_V1_SHA256` and in the
+`packs/*.SHA256` sidecars; CI fails if a rebuild, the sidecars, and the
+`vault.py` pins disagree. The Agent Ops digest is for the demonstration pack,
+which is outside the byte-reproducibility claim.

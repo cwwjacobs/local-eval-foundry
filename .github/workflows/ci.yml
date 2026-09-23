@@ -28,6 +28,23 @@ jobs:
         run: python -m compileall -q evalfoundry
       - name: Build canonical release packs first pass
         run: python scripts/build_release_packs.py > build-release-packs-first.json
+      - name: Check rebuilt pins match committed sidecars and vault.py
+        shell: bash
+        run: |
+          git diff --exit-code -- packs/policy-gate-public-v1.SHA256 packs/tool-contract-public-v1.SHA256
+          python - <<'EOF'
+          from pathlib import Path
+          from evalfoundry import vault
+          pins = {
+              "policy-gate-public-v1": vault.APPROVED_POLICY_GATE_PUBLIC_V1_SHA256,
+              "tool-contract-public-v1": vault.APPROVED_TOOL_CONTRACT_PUBLIC_V1_SHA256,
+          }
+          for name, pinned in pins.items():
+              built = Path(f"packs/{name}.SHA256").read_text().split()[0]
+              if built != pinned:
+                  raise SystemExit(f"{name}: vault.py pin {pinned} != rebuilt {built}")
+          print("vault.py pins match rebuilt packs")
+          EOF
       - name: Save first-pass release pins
         shell: bash
         run: |

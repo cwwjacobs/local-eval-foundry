@@ -4,7 +4,7 @@
 
 Please do not publish exploitable vulnerabilities, credentials, or private evaluation material in a public issue.
 
-Report security problems through a private contact channel listed on the GTDataworks website. Include the affected version, reproduction steps, impact, and any suggested mitigation.
+Report security problems privately through GitHub: open the repository's **Security** tab and choose **Report a vulnerability**. Include the affected version, reproduction steps, impact, and any suggested mitigation.
 
 ## Scope
 
