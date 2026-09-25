@@ -121,12 +121,10 @@ class Keyring:
     def create(cls, path: str | Path, *, key_id: str) -> "Keyring":
         """Create a new keyring file with one active key. Never overwrites."""
         destination = Path(path).expanduser()
-        if destination.exists():
-            raise SigningError(f"Keyring already exists: {destination}. Existing keyrings are never overwritten.")
         keyring = cls({}, None)
         keyring.add_key(key_id)
         keyring._current = key_id
-        keyring.save(destination)
+        keyring._write(destination, overwrite=False)
         return keyring
 
     @classmethod
@@ -162,16 +160,37 @@ class Keyring:
         return cls(dict(keys), current)
 
     def save(self, path: str | Path) -> None:
-        destination = Path(path).expanduser()
+        self._write(Path(path).expanduser(), overwrite=True)
+
+    def _write(self, destination: Path, *, overwrite: bool) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         encoded = json.dumps(self.as_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-        with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", dir=destination.parent, delete=False, suffix=".tmp"
-        ) as temporary:
-            temporary.write(encoded)
-            temporary_path = Path(temporary.name)
-        os.replace(temporary_path, destination)
-        os.chmod(destination, 0o600)
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=destination.parent, delete=False, suffix=".tmp"
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                # NamedTemporaryFile creates this inode owner-only. Publish only
+                # after all bytes have been written and the file is closed.
+                temporary.write(encoded)
+                temporary.flush()
+                os.fsync(temporary.fileno())
+            if overwrite:
+                os.replace(temporary_path, destination)
+            else:
+                # Atomic no-clobber publication, including dangling symlinks.
+                # Never fall back to replace on filesystems without hard links.
+                os.link(temporary_path, destination)
+        except FileExistsError:
+            raise SigningError(
+                f"Keyring already exists: {destination}. Existing keyrings are never overwritten."
+            ) from None
+        except OSError as error:
+            raise SigningError(f"Cannot publish keyring {destination}: {error}") from error
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
 
     def as_dict(self) -> dict[str, Any]:
         return {"version": KEYRING_VERSION, "current": self._current, "keys": self._keys}

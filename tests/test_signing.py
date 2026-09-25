@@ -3,9 +3,11 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from evalfoundry.cli import main as cli_main
 from evalfoundry.errors import SigningError
@@ -100,8 +102,49 @@ class KeyringTests(unittest.TestCase):
     def test_create_refuses_to_overwrite(self) -> None:
         path = self.base / "keyring.json"
         Keyring.create(path, key_id="k1")
+        original = path.read_bytes()
         with self.assertRaises(SigningError):
             Keyring.create(path, key_id="k2")
+        self.assertEqual(original, path.read_bytes())
+        self.assertEqual([], list(self.base.glob("*.tmp")))
+
+    def test_competing_creator_wins_without_being_overwritten(self) -> None:
+        path = self.base / "keyring.json"
+        original_link = os.link
+        winner = None
+
+        def competing_publish(source, destination):
+            nonlocal winner
+            # Another creator publishes at the exact race boundary.
+            with patch("evalfoundry.signing.os.link", original_link):
+                Keyring.create(path, key_id="winner")
+            winner = path.read_bytes()
+            original_link(source, destination)
+
+        with patch("evalfoundry.signing.os.link", side_effect=competing_publish):
+            with self.assertRaises(SigningError):
+                Keyring.create(path, key_id="loser")
+        self.assertEqual(winner, path.read_bytes())
+        self.assertEqual("winner", Keyring.load(path).current_key_id)
+        self.assertEqual([], list(self.base.glob("*.tmp")))
+
+    def test_dangling_symlink_is_not_replaced(self) -> None:
+        path = self.base / "keyring.json"
+        target = self.base / "missing.json"
+        path.symlink_to(target)
+        with self.assertRaises(SigningError):
+            Keyring.create(path, key_id="k1")
+        self.assertTrue(path.is_symlink())
+        self.assertFalse(target.exists())
+        self.assertEqual([], list(self.base.glob("*.tmp")))
+
+    def test_unsupported_publication_fails_closed_and_cleans_up(self) -> None:
+        path = self.base / "keyring.json"
+        with patch("evalfoundry.signing.os.link", side_effect=OSError("unsupported")):
+            with self.assertRaises(SigningError):
+                Keyring.create(path, key_id="k1")
+        self.assertFalse(path.exists())
+        self.assertEqual([], list(self.base.glob("*.tmp")))
 
     def test_keyring_file_is_owner_only(self) -> None:
         import stat
