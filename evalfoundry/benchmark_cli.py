@@ -12,6 +12,7 @@ from .cli import (
     _add_model_arguments,
     _add_state_argument,
     _client_from_args,
+    _signer_from_args,
     _vault_from_args,
 )
 from .errors import BudgetExceeded, EvalFoundryError
@@ -65,7 +66,7 @@ def main(argv: list[str] | None = None) -> int:
             raise BudgetExceeded(
                 f"Full split contains {available} model calls. Re-run with --confirm-full-split."
             )
-        store = ReceiptStore(args.state_dir)
+        store = ReceiptStore(args.state_dir, signer=_signer_from_args(args))
         engine = RunEngine(vault, store, _client_from_args(args))
         report = run_benchmark(
             vault,
