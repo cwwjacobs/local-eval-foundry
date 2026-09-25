@@ -159,6 +159,38 @@ seed, call budget and usage, status counts, overall accuracy, per-task accuracy,
 error counts, claim boundary, and the individual run receipt IDs. Existing
 reports are never overwritten.
 
+## Receipt signing (optional)
+
+Receipts are durable and portable, and they can optionally be signed so a third
+party can detect tampering. Signing is disabled by default; unsigned receipts
+remain valid engine output.
+
+```bash
+# Create a keyring with one active signer key (never overwritten, mode 0600).
+evalfoundry keygen --keyring keys/signing.json --key-id release-2026-09
+
+# Sign every receipt saved by run/serve/benchmark with the current key.
+evalfoundry run ... --state-dir state --keyring keys/signing.json
+
+# Rotate: the new key becomes the current signer, the old one is retired but
+# retained, so receipts it signed keep verifying.
+evalfoundry rotate-key --keyring keys/signing.json --new-key-id release-2026-12
+
+# Verify any stored receipt. Exit code is 0 only for a valid signature;
+# unknown key IDs and bad signatures are reported as distinct statuses.
+evalfoundry verify-receipt --receipt state/receipts/<run-id>.json --keyring keys/signing.json
+```
+
+Each signature carries an explicit signer key ID and covers a documented
+canonical form of the receipt (sorted keys, compact separators, ASCII-stable).
+A valid signature proves **integrity under a key** — that the receipt bytes
+match a key in your keyring. It does **not** prove model or evaluator
+truthfulness: a wrong or compromised scorer can still emit a well-signed false
+receipt. Keys are symmetric (HMAC-SHA256 via the Python standard library; the
+project has no third-party crypto dependency), so a keyring is a private
+artifact — anyone holding a key can sign as that key ID. See
+[`docs/SIGNING.md`](docs/SIGNING.md) for the full format and trust model.
+
 ## Pack contract
 
 A pack contains:
@@ -189,8 +221,9 @@ EvalFoundry demonstrates whether a model applies a declared deterministic pack
 contract to supplied evidence. It does **not** certify that a model is generally
 safe, secure, truthful, or suitable for an undeclared environment.
 
-Receipts are durable and portable. They are not yet cryptographically signed or
-tamper-proof.
+Receipts are durable and portable. With optional [signing](#receipt-signing-optional)
+they are also tamper-evident under an explicit signer key; a signature attests
+integrity only, never model or evaluator truthfulness.
 
 ## Development
 
