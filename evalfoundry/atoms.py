@@ -276,6 +276,7 @@ def admit_text(
     meta: Optional[Dict[str, Any]] = None,
     require_multi: bool = True,
     atom_id: Optional[str] = None,
+    admitted_at: Optional[str] = None,
 ) -> tuple[Optional[Atom], list[str]]:
     """
     Apply G0–G5. Returns (Atom|None, reasons).
@@ -339,7 +340,8 @@ def admit_text(
         domain_hits=hits,
         composition=composition,
         structure=struct,
-        admitted_at=utc_now(),
+        # Release builders pass a fixed timestamp so rebuilt atoms are byte-identical.
+        admitted_at=admitted_at or utc_now(),
         gates_passed=["G0", "G1", "G2", "G3", "G4", "G5"],
         meta=meta or {},
     )

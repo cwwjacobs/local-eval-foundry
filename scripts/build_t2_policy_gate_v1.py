@@ -229,6 +229,10 @@ def jsonl_bytes(rows: list[dict]) -> bytes:
     )
 
 
+# Fixed admission time for the release atoms, so rebuilds reproduce the committed files.
+RELEASE_ADMITTED_AT = "2026-09-23T14:32:06Z"
+
+
 def admit_feedstock() -> list[Any]:
     atoms = []
     for line in FEEDSTOCK.read_text(encoding="utf-8").splitlines():
@@ -243,6 +247,7 @@ def admit_feedstock() -> list[Any]:
             public=True,
             meta={"source_id": row["source_id"], "control_id": row.get("control_id")},
             atom_id=f"atom-{row['source_id']}",
+            admitted_at=RELEASE_ADMITTED_AT,
         )
         if atom is None:
             raise SystemExit(f"Feedstock failed admit {row.get('source_id')}: {reasons}")

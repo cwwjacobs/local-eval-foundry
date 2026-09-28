@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from evalfoundry.agent_ops_rubric import evaluate_action_gate  # noqa: E402
+from evalfoundry.archive import canonicalize_zip  # noqa: E402
 OUT_DIR = ROOT / "packs" / "agent-ops-public-v1"
 ZIP_PATH = ROOT / "packs" / "agent-ops-public-v1.zip"
 PACK_ROOT = "agent-ops-public-v1/"
@@ -492,7 +493,11 @@ def assign_splits(cases: list) -> dict[str, list]:
     for blind, label, trace, family in cases:
         # pick first underfilled split with deterministic preference from hash
         h = int(sha256_bytes(blind["id"].encode())[:8], 16)
-        ranked = sorted(order, key=lambda s: (len(buckets[s]) >= targets[s], (h + hash(s)) % 97))
+        # Stable digest, not hash(): str hashing is randomized per process (PYTHONHASHSEED).
+        ranked = sorted(
+            order,
+            key=lambda s: (len(buckets[s]) >= targets[s], (h + int(sha256_bytes(s.encode())[:8], 16)) % 97),
+        )
         placed = False
         for s in ranked:
             if len(buckets[s]) < targets[s]:
@@ -654,7 +659,9 @@ Answers sealed under answers/*.
         for rel, data in files.items():
             zf.writestr(PACK_ROOT + rel, data)
 
-    digest = sha256_bytes(ZIP_PATH.read_bytes())
+    # Same byte-stable representation as the release packs (sorted entries,
+    # fixed timestamps and permissions, ZIP_STORED).
+    digest = canonicalize_zip(ZIP_PATH)
     (ROOT / "packs" / "agent-ops-public-v1.SHA256").write_text(digest + "\n", encoding="utf-8")
     pin_path = ROOT / "packs" / "APPROVED_AGENT_OPS_PUBLIC_V1_SHA256.txt"
     pin_path.write_text(digest + "\n", encoding="utf-8")

@@ -62,6 +62,19 @@ jobs:
           printf 'tool_contract=' && cat packs/tool-contract-public-v1.SHA256
       - name: Build Agent Ops demonstration pack
         run: python scripts/build_agent_ops_public_v1.py > build-agent-ops-demo.json
+      - name: Check rebuilt atoms and Agent Ops files match committed files
+        run: >-
+          git diff --exit-code --
+          atoms
+          packs/agent-ops-public-v1
+          packs/agent-ops-public-v1.SHA256
+          packs/APPROVED_AGENT_OPS_PUBLIC_V1_SHA256.txt
+      - name: Rebuild Agent Ops under a different hash seed
+        shell: bash
+        run: |
+          cp packs/agent-ops-public-v1.SHA256 /tmp/agent-ops-first.SHA256
+          PYTHONHASHSEED=12345 python scripts/build_agent_ops_public_v1.py > /dev/null
+          diff -u /tmp/agent-ops-first.SHA256 packs/agent-ops-public-v1.SHA256
       - name: Run tests
         run: python -m unittest discover -s tests -v
       - name: Verify packaged CLI

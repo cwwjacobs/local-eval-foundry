@@ -72,8 +72,9 @@ rewrites both ZIPs into the canonical `canonical-zip-stored-v1` representation.
 SHA-256 sidecars are updated only after canonicalization.
 
 CI performs this release build twice and rejects any hash drift. Agent Ops is
-built once separately so its demonstration tests still run without expanding
-the 1.0 release claim.
+built separately so its demonstration tests still run without expanding the
+1.0 release claim; CI also fails if rebuilding it changes the committed atoms or
+Agent Ops files, or if its archive depends on Python's hash seed.
 
 ## Verify a release pack
 
@@ -199,8 +200,10 @@ python -m unittest discover -s tests -v
 ```
 
 CI runs the suite on Python 3.11, 3.12, and 3.13, rebuilds the two release packs
-twice, builds the Agent Ops demonstration once, verifies byte-stable release
-hashes, and rejects known repository contamination paths.
+twice, builds the Agent Ops demonstration and checks that rebuilt atoms and
+Agent Ops files match the committed ones (including under a second hash seed),
+verifies byte-stable release hashes, and rejects known repository contamination
+paths.
 
 ## License
 
