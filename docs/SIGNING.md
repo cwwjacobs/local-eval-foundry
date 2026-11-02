@@ -88,6 +88,9 @@ JSON verdict distinguishes the failure modes:
 `unknown_key_id` and `invalid_signature` are deliberately distinct: an unknown
 ID means the verifier has no key for that signer at all, while an invalid
 signature means the identified key exists and the content does not match it.
+Malformed signature values, non-object receipts, and payloads that cannot be
+canonicalized also return `invalid_signature`; they never produce a valid
+verdict. Keyring loading rejects whitespace-padded short or empty keys.
 
 ## Commands
 

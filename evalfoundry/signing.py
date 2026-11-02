@@ -150,9 +150,11 @@ class Keyring:
             if not isinstance(key_hex, str) or len(key_hex) != _KEY_BYTES * 2:
                 raise SigningError(f"Keyring entry {key_id!r} must hold a {_KEY_BYTES}-byte hex key.")
             try:
-                bytes.fromhex(key_hex)
+                decoded_key = bytes.fromhex(key_hex)
             except ValueError:
                 raise SigningError(f"Keyring entry {key_id!r} holds non-hex key material.") from None
+            if len(decoded_key) != _KEY_BYTES:
+                raise SigningError(f"Keyring entry {key_id!r} must hold a {_KEY_BYTES}-byte hex key.")
         if current is not None:
             _validate_key_id(current)
             if current not in keys:
@@ -291,6 +293,8 @@ def verify_receipt(receipt: Mapping[str, Any], keyring: Keyring) -> Verification
     ``invalid_signature`` (the key is known but the HMAC does not match —
     content mutation or wrong key material).
     """
+    if not isinstance(receipt, Mapping):
+        return VerificationResult(STATUS_INVALID, None, "Receipt is not an object.")
     signature = receipt.get("signature")
     if signature is None:
         return VerificationResult(STATUS_UNSIGNED, None, "Receipt carries no signature member.")
@@ -306,11 +310,17 @@ def verify_receipt(receipt: Mapping[str, Any], keyring: Keyring) -> Verification
                                   f"Unsupported canonicalization: {signature.get('canonicalization')!r}.")
     if not isinstance(key_id, str) or not isinstance(value, str):
         return VerificationResult(STATUS_INVALID, None, "Signature must carry string key_id and value.")
+    if len(value) != 64 or any(character not in "0123456789abcdefABCDEF" for character in value):
+        return VerificationResult(STATUS_INVALID, key_id, "Signature value must contain 64 hexadecimal characters.")
     key = keyring.verification_key(key_id)
     if key is None:
         return VerificationResult(STATUS_UNKNOWN_KEY, key_id,
                                   f"Signer key ID {key_id!r} is not in the keyring.")
-    expected = hmac.new(key, canonical_receipt_bytes(receipt), hashlib.sha256).hexdigest()
+    try:
+        canonical = canonical_receipt_bytes(receipt)
+    except (TypeError, ValueError):
+        return VerificationResult(STATUS_INVALID, key_id, "Receipt cannot be serialized in the declared canonical form.")
+    expected = hmac.new(key, canonical, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, value.lower()):
         return VerificationResult(STATUS_INVALID, key_id,
                                   "Signature does not match the canonical receipt bytes under this key.")
