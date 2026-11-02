@@ -14,6 +14,7 @@ from .model_client import OpenAICompatibleClient
 from .models import ModelConfig
 from .receipts import ReceiptStore
 from .runner import RunEngine
+from .signing import Keyring, ReceiptSigner, load_signer, verify_receipt
 from .training import build_trace_sft
 from .vault import (
     APPROVED_AGENT_OPS_PUBLIC_V1_SHA256,
@@ -84,6 +85,14 @@ def _add_state_argument(parser: argparse.ArgumentParser) -> None:
         default="state",
         help="Directory for SQLite state and JSON receipts (default: ./state).",
     )
+    parser.add_argument(
+        "--keyring",
+        default=None,
+        help=(
+            "Optional receipt-signing keyring. When set, every saved receipt is "
+            "signed with the keyring's current key. Omit to keep receipts unsigned."
+        ),
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -137,6 +146,24 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional exact browser origin for CORS. Omit when the UI is served with this app.",
     )
+
+    keygen = subparsers.add_parser(
+        "keygen", help="Create a receipt-signing keyring with one active signer key."
+    )
+    keygen.add_argument("--keyring", required=True, help="New keyring path; never overwritten.")
+    keygen.add_argument("--key-id", required=True, help="Explicit signer identity for the first key.")
+
+    rotate = subparsers.add_parser(
+        "rotate-key", help="Add a new current signer key and retire the previous one."
+    )
+    rotate.add_argument("--keyring", required=True, help="Existing keyring path.")
+    rotate.add_argument("--new-key-id", required=True, help="Explicit signer identity for the new key.")
+
+    verify_signed = subparsers.add_parser(
+        "verify-receipt", help="Verify a signed receipt against a keyring."
+    )
+    verify_signed.add_argument("--receipt", required=True, help="Path to a receipt JSON file.")
+    verify_signed.add_argument("--keyring", required=True, help="Keyring path.")
     return parser
 
 
@@ -212,9 +239,14 @@ def _vault_from_args(args: argparse.Namespace) -> DatasetVault:
     return vault
 
 
+def _signer_from_args(args: argparse.Namespace) -> ReceiptSigner | None:
+    keyring_path = getattr(args, "keyring", None)
+    return load_signer(keyring_path) if keyring_path else None
+
+
 def _engine_from_args(args: argparse.Namespace) -> tuple[DatasetVault, ReceiptStore, RunEngine]:
     vault = _vault_from_args(args)
-    store = ReceiptStore(args.state_dir)
+    store = ReceiptStore(args.state_dir, signer=_signer_from_args(args))
     engine = RunEngine(vault, store, _client_from_args(args))
     return vault, store, engine
 
@@ -300,6 +332,38 @@ def main(argv: list[str] | None = None) -> int:
             finally:
                 httpd.server_close()
             return 0
+
+        if args.command == "keygen":
+            keyring = Keyring.create(args.keyring, key_id=args.key_id)
+            _json(
+                {
+                    "keyring": args.keyring,
+                    "current_key_id": keyring.current_key_id,
+                    "state": "active",
+                    "note": "Keep this keyring private: anyone holding a key can sign as that key ID.",
+                }
+            )
+            return 0
+
+        if args.command == "rotate-key":
+            keyring = Keyring.load(args.keyring)
+            previous = keyring.rotate(args.new_key_id)
+            keyring.save(args.keyring)
+            _json(
+                {
+                    "keyring": args.keyring,
+                    "current_key_id": keyring.current_key_id,
+                    "retired_key_id": previous,
+                    "note": "Retired keys are retained and keep verifying older receipts.",
+                }
+            )
+            return 0
+
+        if args.command == "verify-receipt":
+            payload = json.loads(Path(args.receipt).read_text(encoding="utf-8"))
+            result = verify_receipt(payload, Keyring.load(args.keyring))
+            _json(result.as_dict())
+            return 0 if result.ok else 1
     except EvalFoundryError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2

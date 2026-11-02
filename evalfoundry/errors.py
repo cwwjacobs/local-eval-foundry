@@ -27,3 +27,7 @@ class ModelProtocolError(EvalFoundryError):
 
 class UnsupportedEndpoint(EvalFoundryError):
     """An endpoint is remote or malformed without explicit authorization."""
+
+
+class SigningError(EvalFoundryError):
+    """A receipt-signing or keyring operation could not be completed."""
